@@ -1,0 +1,1 @@
+@cursor-rules.mdc @component-you-want-to-replicate /Generate Cursor Rules  I want to generate Cursor rule for the attached file. Please analyse it carefully and outline all the conventions found. Output as one rule file only.

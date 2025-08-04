@@ -1,0 +1,137 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Data Handling Guide
+
+## Data Types and Structures
+
+### 1. API Response Types
+The project uses TypeScript interfaces to define API response structures:
+
+1. **Common Response Pattern**
+```typescript
+type CommonResult<T> = {
+  data: T | undefined | null;
+  message: string;
+  loading: boolean;
+  success: boolean;
+  errors?: GraphQLErrorDetail[];
+};
+```
+
+2. **Tool-Related Responses**
+- `GetAllToolsAPIResponse`: List of tools with pagination
+- `ToolByIdResponse`: Detailed tool information
+- `ToolSummariesResponseDto`: Tool summary information
+
+3. **Coach-Related Responses**
+- `CoachResponseDto`: Coach profile information
+- `CoachDashboardApiResponse`: Dashboard statistics and data
+- `FindAllCoachesResponse`: Paginated coach list
+
+4. **Client-Related Responses**
+- `ClientDashboardResponse`: Client dashboard data
+- `GetClientsByIdResponse`: Detailed client information
+- `AssignCoachToClientResponse`: Coach assignment data
+
+### 2. Mock Data Usage
+
+1. **Search Results**
+```typescript
+const TOOLS_DATA: SearchResult[] = [
+  {
+    id: "energy-wheel",
+    title: "ENERGY WHEEL ASSESSMENT",
+    description: "Visualize your organization's energy dynamics...",
+    url: "/tool/energy-wheel-assessment",
+    type: "tool",
+    category: "assessment",
+    icon: "PlusCircle"
+  }
+  // ... more tools
+];
+```
+
+2. **Tool Sections**
+```typescript
+const data = [
+  {
+    "__typename": "SectionDto",
+    "description": "",
+    "id": 205,
+    "name": "Metric Management",
+    "questions": [],
+    "sectionType": "main",
+    "toolId": 32
+  }
+  // ... more sections
+];
+```
+
+## Best Practices
+
+### 1. Type Safety
+- Always define interfaces for API responses
+- Use TypeScript's type system to ensure data consistency
+- Avoid using `any` type unless absolutely necessary
+
+### 2. Data Organization
+- Group related data types in appropriate files:
+  - `Types/toolsType.ts`: Tool-related types
+  - `Types/coachType.ts`: Coach-related types
+  - `Types/clientType.ts`: Client-related types
+  - `Types/adminType.ts`: Admin-related types
+
+### 3. Mock Data Guidelines
+- Place mock data outside components to prevent recreation
+- Use realistic data structures matching API responses
+- Include all required fields in mock data
+- Document mock data purpose and usage
+
+### 4. API Response Handling
+- Implement proper error handling
+- Use loading states for async operations
+- Validate response data before use
+- Handle null/undefined cases
+
+## Common Patterns
+
+### 1. Dashboard Data
+```typescript
+type DashboardStats = {
+  activeCoaches: number;
+  activePathways: number;
+  availableTools: number;
+  pathwaysCompletion: {
+    completedPercentage: number;
+    inProgressPercentage: number;
+    notStartedPercentage: number;
+  };
+  totalClients: number;
+  userTrend: {
+    count: number;
+    month: number;
+  }[];
+};
+```
+
+### 2. Pagination Response
+```typescript
+type PaginatedResponse<T> = {
+  items: T[];
+  totalCount: number;
+};
+```
+
+### 3. Entity Response
+```typescript
+type EntityResponse<T> = {
+  data: {
+    [key: string]: T;
+  };
+};
+```
+
+

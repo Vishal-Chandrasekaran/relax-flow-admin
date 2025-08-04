@@ -1,0 +1,44 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Project Structure Guide
+
+This is a Next.js project with TypeScript and Tailwind CSS. Here's the main structure:
+
+## Core Directories
+
+- `app/`: Contains the main application routes and layouts
+  - `(private)/`: Private routes requiring authentication
+  - `(public)/`: Public routes accessible without authentication
+  - `layout.tsx`: Root layout component
+  - `globals.css`: Global styles
+
+- `components/`: Reusable React components
+  - `ui/`: Basic UI components
+  - `auth/`: Authentication-related components
+  - `dashboard/`: Dashboard-specific components
+  - `ToolCard/`: Components for tool cards
+  - `ToolDetails/`: Components for tool details
+  - `ClientDetails/`: Components for client information
+  - `PathwayDetails/`: Components for pathway information
+
+- `Store/`: Redux store configuration and slices
+- `hooks/`: Custom React hooks
+- `Types/`: TypeScript type definitions
+- `styles/`: Additional styling files
+- `public/`: Static assets
+
+## Key Files
+
+- `next.config.mjs`: Next.js configuration
+- `tailwind.config.ts`: Tailwind CSS configuration
+- `tsconfig.json`: TypeScript configuration
+- `middleware.ts`: Next.js middleware for authentication and routing
+- `server.js`: Custom server configuration
+
+## State Management
+
+The project uses Redux for state management, configured in the `Store/` directory and wrapped with `store.ts`.
+

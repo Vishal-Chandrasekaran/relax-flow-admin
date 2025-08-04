@@ -1,0 +1,1 @@
+@cursor-rules.mdc @file-you-want-to-create-rule /Generate Cursor Rules I want to generate cursor rule for the attached file. Please analyse it carefully and outline all the conventions found.  Output as one rule file only.

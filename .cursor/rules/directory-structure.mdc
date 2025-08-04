@@ -1,0 +1,60 @@
+---
+description: Guidelines for contents in the codebase and the description for proper project structure.
+globs: **/*
+alwaysApply: true
+---
+# Directory Structure and Important Files
+
+This rule documents the main folders and important files in the project, providing a quick reference for contributors to understand the layout and where to find or place things.
+
+## Root Directory
+- `app/` - Main Next.js app directory. Contains route folders (e.g., `dashboard`, `login`, `music`, `owners`, `products`, `profile`, `settings`, `users`) and shared layout files (`layout.tsx`, `globals.css`, etc.).
+- `components/` - Shared React components. Includes feature-specific components and a `ui/` subfolder for reusable UI primitives (buttons, dialogs, tables, etc.).
+- `hooks/` - Custom React hooks used throughout the project.
+- `lib/` - Utility functions and libraries.
+- `public/` - Static assets (images, logos, etc.).
+- `styles/` - Global CSS and style files.
+- `.cursor/rules/` - Cursor rules for codebase standards and documentation.
+- `package.json`, `pnpm-lock.yaml`, `package-lock.json` - Project dependencies and lockfiles.
+- `tsconfig.json` - TypeScript configuration.
+- `tailwind.config.ts`, `postcss.config.mjs` - Tailwind CSS and PostCSS configuration.
+- `next.config.mjs` - Next.js configuration.
+
+## Notable Subfolders
+
+### `app/`
+- Contains route folders for each main feature/page (e.g., `dashboard`, `login`, `music`, `owners`, `products`, `profile`, `settings`, `users`).
+- Each route folder may have its own `page.tsx` and `loading.tsx`.
+- Shared layout and global styles: `layout.tsx`, `globals.css`, `dashboard.tsx`, `page.tsx`.
+
+### `components/`
+- Feature components: e.g., `add-meditation-dialog.tsx`, `owners-table.tsx`, `users-table.tsx`, etc.
+- `ui/` - Contains reusable UI primitives (e.g., `button.tsx`, `dialog.tsx`, `table.tsx`, etc.).
+
+### `hooks/`
+- Custom hooks like `use-mobile.tsx`, `use-toast.ts`.
+
+### `lib/`
+- Utility files, e.g., `utils.ts`.
+
+### `public/`
+- Static assets, including `images/` (e.g., `dashboard-cards.png`, `meditation-placeholder.png`, etc.), and placeholder images/logos.
+
+### `styles/`
+- Global CSS files, e.g., `globals.css`.
+
+### `.cursor/rules/`
+- Project-specific Cursor rules for code standards and documentation.
+
+## Adding New Files
+- Place new pages/routes in the appropriate `app/` subfolder.
+- Add new shared components to `components/` or `components/ui/` if they are UI primitives.
+- Add new hooks to `hooks/`.
+- Place static assets in `public/` (preferably in a subfolder like `images/`).
+- Add new rules to `.cursor/rules/` following the naming conventions in `cursor-rules.mdc`.
+
+Refer to this rule when navigating or extending the project structure.
+description:
+globs:
+alwaysApply: false
+---

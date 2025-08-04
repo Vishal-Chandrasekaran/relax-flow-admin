@@ -1,0 +1,88 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Component Development Guide
+
+## Component Structure
+
+Components in this project follow these conventions:
+
+1. **File Organization**
+   - Components are stored in the `components/` directory
+   - Feature-specific components are grouped in their own directories
+   - UI components are in the `ui/` directory
+
+2. **Component Types**
+   - Page Components: Located in `app/` directory
+   - Layout Components: Like `layout.tsx` and `Providers.tsx`
+   - Reusable Components: In `components/` directory
+   - Feature Components: Grouped in feature-specific directories
+
+3. **Component Structure**
+   ```typescript
+   // Example component structure
+   import { FC } from 'react'
+   import { useDispatch } from 'react-redux'
+   
+   interface Props {
+     // Props interface
+   }
+   
+   export const ComponentName: FC<Props> = ({ prop1, prop2 }) => {
+     // Hooks
+     // State
+     // Effects
+     // Handlers
+     
+     return (
+       // JSX
+     )
+   }
+   ```
+
+## Best Practices
+
+1. **TypeScript Usage**
+   - Always define prop interfaces
+   - Use type inference where possible
+   - Export types when needed by other components
+
+2. **State Management**
+   - Use Redux for global state
+   - Use local state for component-specific state
+   - Use custom hooks for reusable logic
+
+3. **Styling**
+   - Use Tailwind CSS for styling
+   - Follow the project's design system
+   - Use responsive design patterns
+
+4. **Performance**
+   - Memoize expensive computations
+   - Use proper dependency arrays in hooks
+   - Implement proper loading states
+
+5. **Testing**
+   - Write unit tests for components
+   - Test user interactions
+   - Mock external dependencies
+
+## Common Patterns
+
+1. **Authentication**
+   - Use the auth components from `components/auth/`
+   - Implement proper loading states
+   - Handle error cases
+
+2. **Data Fetching**
+   - Use proper loading states
+   - Implement error boundaries
+   - Cache data appropriately
+
+3. **Form Handling**
+   - Use form validation
+   - Implement proper error messages
+   - Handle submission states
+

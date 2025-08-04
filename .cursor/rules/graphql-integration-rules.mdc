@@ -1,0 +1,16 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+## GraphQl Interaction Rules
+
+- Always import Apollo Client from a [Apollo-Server.ts](mdc:lib/Apollo-Server.ts) instance to avoid multiple clients.
+- Use GraphQL Codegen to generate typed hooks to avoid manual query typing.
+- Do not define GraphQL queries inline in components. Store them in [Apollo-Queries.ts](mdc:lib/Apollo-Queries.ts)
+- Every API call must handle loading, error, and empty states.
+- Define Queries and Mutation in store actions.  
+
+
+
+

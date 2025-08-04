@@ -1,0 +1,5 @@
+In the @create-user-dialog.tsx component,
+Please create default object state with name form and its setter function name will be setState.
+Then implement on change handle for each fields.
+then Please implement validation on the fields "First Name, ..... "
+Please use @Simple React Validator for validation.

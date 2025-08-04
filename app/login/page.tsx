@@ -39,7 +39,7 @@ export default function LoginPage() {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1500))
       console.log("Login attempt:", data)
-
+      localStorage.setItem('token', '1234567890')
       // Navigate to dashboard on successful login
       router.push("/")
     } catch (error) {

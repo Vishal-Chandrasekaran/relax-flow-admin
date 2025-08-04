@@ -14,8 +14,10 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { useRouter } from "next/navigation";
 
 export function DashboardHeader() {
+  const router = useRouter(); 
   return (
     <header className="flex h-16 items-center gap-4 border-b bg-background px-6">
       <SidebarTrigger className="-ml-1" />
@@ -59,7 +61,10 @@ export function DashboardHeader() {
               <span>Settings</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => {
+              localStorage.removeItem('token')
+              router.push('/login')
+            }}>
               <span>Log out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -1,9 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
+import { useState, useRef } from "react"
+import SimpleReactValidator from 'simple-react-validator'
 import {
   Dialog,
   DialogContent,
@@ -12,28 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Loader2 } from "lucide-react"
-
-const createUserSchema = z.object({
-  firstName: z
-    .string()
-    .min(2, "First name must be at least 2 characters")
-    .max(25, "First name must be less than 25 characters"),
-  lastName: z
-    .string()
-    .min(2, "Last name must be at least 2 characters")
-    .max(25, "Last name must be less than 25 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  role: z.enum(["Admin", "User"], {
-    required_error: "Please select a role",
-  }),
-})
-
-type CreateUserFormValues = z.infer<typeof createUserSchema>
 
 interface CreateUserDialogProps {
   open: boolean
@@ -42,37 +19,44 @@ interface CreateUserDialogProps {
 
 export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const [form, setState] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    role: "User",
+    status: true, // true for active, false for inactive
+  });
 
-  const form = useForm<CreateUserFormValues>({
-    resolver: zodResolver(createUserSchema),
-    defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      role: "User",
-    },
-  })
-
-  const onSubmit = async (data: CreateUserFormValues) => {
-    setIsLoading(true)
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-      console.log("Creating user:", data)
-
-      // Reset form and close dialog
-      form.reset()
-      onOpenChange(false)
-    } catch (error) {
-      console.error("Error creating user:", error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const simpleValidator = useRef(new SimpleReactValidator())
 
   const handleClose = () => {
-    form.reset()
-    onOpenChange(false)
+    onOpenChange(false);
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type, checked }:any = e.target;
+    setState(prevState => ({
+      ...prevState,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (simpleValidator.current.allValid()) {
+      setIsLoading(true)
+      try {
+        // Handle form submission here
+        console.log(form)
+        handleClose()
+      } catch (error) {
+        console.error("Error creating user:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    } else {
+      simpleValidator.current.showMessages();
+    }
   }
 
   return (
@@ -85,83 +69,88 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="flex flex-col space-y-2">
+            <label htmlFor="firstName" className="font-medium">First Name</label>
+            <input
+              id="firstName"
               name="firstName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>First Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter first name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              type="text"
+              value={form.firstName}
+              onChange={handleChange}
+              placeholder="Enter first name"
+              className="input p-2 border border-gray-300 rounded"
             />
+            {simpleValidator.current.message('firstName', form.firstName, 'required|alpha')}
+          </div>
 
-            <FormField
-              control={form.control}
+          <div className="flex flex-col space-y-2">
+            <label htmlFor="lastName" className="font-medium">Last Name</label>
+            <input
+              id="lastName"
               name="lastName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Last Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter last name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              type="text"
+              value={form.lastName}
+              onChange={handleChange}
+              placeholder="Enter last name"
+              className="input p-2 border border-gray-300 rounded"
             />
+            {simpleValidator.current.message('lastName', form.lastName, 'required|alpha')}
+          </div>
 
-            <FormField
-              control={form.control}
+          <div className="flex flex-col space-y-2">
+            <label htmlFor="email" className="font-medium">Email</label>
+            <input
+              id="email"
               name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email Address</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="Enter email address" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              type="email"
+              value={form.email}
+              onChange={handleChange}
+              placeholder="Enter email address"
+              className="input p-2 border border-gray-300 rounded"
             />
+            {simpleValidator.current.message('email', form.email, 'required|email')}
+          </div>
 
-            <FormField
-              control={form.control}
+          <div className="flex flex-col space-y-2">
+            <label htmlFor="role" className="font-medium">Role</label>
+            <select
+              id="role"
               name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Role</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="User">User</SelectItem>
-                      <SelectItem value="Admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              value={form.role}
+              onChange={handleChange}
+              className="select p-2 border border-gray-300 rounded"
+            >
+              <option value="User">User</option>
+              <option value="Admin">Admin</option>
+            </select>
+            {simpleValidator.current.message('role', form.role, 'required')}
+          </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create User
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+          <div className="flex items-center space-x-2">
+            <label htmlFor="status" className="font-medium">Status</label>
+            <input
+              id="status"
+              name="status"
+              type="checkbox"
+              checked={form.status}
+              onChange={handleChange}
+              className="switch"
+            />
+            <span>{form.status ? "Active" : "Inactive"}</span>
+            {simpleValidator.current.message('status', form.status, 'boolean')}
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Creating..." : "Create User"}
+            </Button>
+          </DialogFooter>
+        </form>
+
       </DialogContent>
     </Dialog>
   )

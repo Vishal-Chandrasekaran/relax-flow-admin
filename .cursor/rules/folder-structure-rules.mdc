@@ -1,0 +1,30 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+## Folder Structure and Organization
+
+- **Pages**: All pages are managed within the `src/app` directory. Routes are handled by folder-based routing with layout files in each directory.
+  - **Main Layout**: The primary layout file @layout.tsx is located in the `src/app` directory, acting as the base layout for the entire application.
+  - **Public Pages**: Public pages like login, signup, and forget password should be placed in the `(public)` folder within `src/app`.
+  
+  For example:
+    - `src/app/(public)/login/page.tsx`
+    - `src/app/(public)/signup/page.tsx`
+    
+    - **Minimal Layout**: These pages should **not** include headers, footers, or navigation bars to keep them minimal and focused on authentication-related content.
+  - **Private Pages**: Private pages like the dashboard, users list, and profile should be placed in the `(private)` folder within `src/app`.
+  
+  For example:
+    - `src/app/(private)/dashboard/page.tsx`
+    - `src/app/(private)/about/page.tsx`
+    - **Full Layout**: These pages will include headers, footers, and navigation bars, and will make use of the global layout defined in the main @layout.tsx file.
+
+- **Components**: Components Should be created as Using Arrow funtion.
+
+- **Server Components**: Server components are used for fetching data on the server side. They are stored under the `src/app` directory and should be used in conjunction with the layouts for data fetching, authentication, and rendering before sending to the client.
+  
+- **Client Components**: Client components are located in the `/components` directory and should be used for interactivity that requires client-side rendering.
+
+ 

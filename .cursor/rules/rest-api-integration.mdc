@@ -1,0 +1,219 @@
+# API Integration Task Template
+
+## Task Overview
+Create a new API integration for [FEATURE_NAME] following the project's established patterns.
+
+## Implementation Steps
+
+### 1. Create API Action File
+Create a new file in `store/apiActions/[feature]Api.ts` with the following structure:
+
+```typescript
+import axios from '../../utils/axiosConfig';
+import { generateUniqueId } from '../../utils/CommonService';
+
+// GET request example
+export const get[Feature]List = (params?: any) => 
+  axios.get('/api/v1/[feature]', { params: { ...params, cache: generateUniqueId() } });
+
+// POST request example
+export const create[Feature] = (body: any) => 
+  axios.post('/api/v1/[feature]', body);
+
+// PUT request example
+export const update[Feature] = (id: number, body: any) => 
+  axios.put(`/api/v1/${id}`, body);
+
+// DELETE request example
+export const delete[Feature] = (id: number) => 
+  axios.delete(`/api/v1/[feature]/${id}`);
+```
+
+### 2. Create Redux Action File
+Create a new file in `store/actions/[feature]Action.ts` with the following structure:
+
+```typescript
+import { AppDispatch } from "../store";
+import * as [feature] from "../reducers/[feature]Reducer";
+import * as [feature]Api from '../apiActions/[feature]Api';
+
+// Get list action
+export const fetch[Feature]List = (params?: any) => async (dispatch: AppDispatch) => {
+  try {
+    dispatch([feature].setLoading(true));
+    const res: any = await [feature]Api.get[Feature]List(params);
+    if (res) {
+      dispatch([feature].set[Feature]List(res.data));
+      return res;
+    }
+  } catch (err) {
+    console.error(err);
+    // Handle error appropriately
+  } finally {
+    dispatch([feature].setLoading(false));
+  }
+};
+
+// Create action
+export const create[Feature] = (body: any) => async (dispatch: AppDispatch) => {
+  try {
+    const res: any = await [feature]Api.create[Feature](body);
+    if (res) {
+      dispatch([feature].add[Feature](res.data));
+      return res;
+    }
+  } catch (err) {
+    console.error(err);
+    // Handle error appropriately
+  }
+};
+
+// Update action
+export const update[Feature] = (id: number, body: any) => async (dispatch: AppDispatch) => {
+  try {
+    const res: any = await [feature]Api.update[Feature](id, body);
+    if (res) {
+      dispatch([feature].update[Feature](id, res.data));
+      return res;
+    }
+  } catch (err) {
+    console.error(err);
+    // Handle error appropriately
+  }
+};
+
+// Delete action
+export const delete[Feature] = (id: number) => async (dispatch: AppDispatch) => {
+  try {
+    const res: any = await [feature]Api.delete[Feature](id);
+    if (res) {
+      dispatch([feature].remove[Feature](id));
+      return res;
+    }
+  } catch (err) {
+    console.error(err);
+    // Handle error appropriately
+  }
+};
+```
+
+### 3. Create Redux Reducer
+Create a new file in `store/reducers/[feature]Reducer.ts` with the following structure:
+
+```typescript
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+
+interface [Feature]State {
+  list: any[];
+  loading: boolean;
+  // Add other state properties as needed
+}
+
+const initialState: [Feature]State = {
+  list: [],
+  loading: false,
+  // Initialize other properties
+};
+
+const [feature]Slice = createSlice({
+  name: '[feature]',
+  initialState,
+  reducers: {
+    setLoading: (state, action: PayloadAction<boolean>) => {
+      state.loading = action.payload;
+    },
+    set[Feature]List: (state, action: PayloadAction<any[]>) => {
+      state.list = action.payload;
+    },
+    add[Feature]: (state, action: PayloadAction<any>) => {
+      state.list.push(action.payload);
+    },
+    update[Feature]: (state, action: PayloadAction<any>) => {
+      const index = state.list.findIndex(item => item.id === action.payload.id);
+      if (index !== -1) {
+        state.list[index] = action.payload;
+      }
+    },
+    remove[Feature]: (state, action: PayloadAction<number>) => {
+      state.list = state.list.filter(item => item.id !== action.payload);
+    },
+    // Add other reducers as needed
+  },
+});
+
+export const {
+  setLoading,
+  set[Feature]List,
+  add[Feature],
+  update[Feature],
+  remove[Feature]
+} = [feature]Slice.actions;
+
+export default [feature]Slice.reducer;
+```
+
+### 4. Add Reducer to Store
+Update `store/store.ts` to include the new reducer:
+
+```typescript
+import { configureStore } from '@reduxjs/toolkit';
+import [feature]Reducer from './reducers/[feature]Reducer';
+// ... other imports
+
+export const store = configureStore({
+  reducer: {
+    // ... other reducers
+    [feature]: [feature]Reducer,
+  },
+});
+
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
+```
+
+### 5. Use in Component
+Example of how to use the new API integration in a React component:
+
+```typescript
+'use client';
+
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetch[Feature]List } from '@/store/actions/[feature]Action';
+import { RootState, AppDispatch } from '@/store/store';
+
+const [Feature]Component: React.FC = () => {
+  const dispatch: AppDispatch = useDispatch();
+  const { list, loading } = useSelector((state: RootState) => state.[feature]);
+
+  useEffect(() => {
+    dispatch(fetch[Feature]List());
+  }, [dispatch]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <div>
+      <h1>[Feature] List</h1>
+      <ul>
+        {list.map((item) => (
+          <li key={item.id}>{item.name}</li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default [Feature]Component;
+```
+
+## Acceptance Criteria
+- [ ] API action file created with appropriate HTTP methods
+- [ ] Redux action file created with proper error handling
+- [ ] Redux reducer created with initial state and reducers
+- [ ] Store updated to include new reducer
+- [ ] Component successfully using the new API integration
+- [ ] Error handling implemented appropriately
+- [ ] Loading states handled correctly

@@ -1,0 +1,84 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Routing and Navigation Guide
+
+- **Authentication**: 
+
+  - **Public Routes**: Routes that do not require authentication (e.g., login, signup, password recovery) are placed under the `(public)` folder.
+  - **Private Routes**: Routes that require authentication (e.g., dashboard, users list, profile) are placed under the `(private)` folder.
+  - Use the `layout.tsx` file in both `(private)` and `(public)` folders to manage layout and authentication.
+
+## Route Structure
+
+The project uses Next.js App Router with the following structure:
+
+1. **Public Routes** (`app/(public)/`)
+   - Accessible without authentication
+   - Landing pages
+   - Public tool pages
+   - Authentication pages
+
+2. **Private Routes** (`app/(private)/`)
+   - Require authentication
+   - Dashboard
+   - User profile
+   - Tool management
+   - Client management
+
+## Navigation Components
+
+1. **Main Navigation**
+   - `components/header.tsx`: Main header component
+   - `components/toolkit-improved-navigation.tsx`: Tool navigation
+   - `components/toolkit-wheel.tsx`: Tool wheel navigation
+
+2. **Navigation Patterns**
+   - Use Next.js `Link` component for client-side navigation
+   - Use `useRouter` hook for programmatic navigation
+   - Implement proper loading states during navigation
+
+## Route Protection
+
+1. **Authentication**
+   - Middleware (`middleware.ts`) handles route protection
+   - Private routes are wrapped with authentication checks
+   - Redirect unauthenticated users to login
+
+2. **Route Guards**
+   - Implement role-based access control
+   - Handle loading states
+   - Manage redirects
+
+## URL Structure
+
+1. **Public URLs**
+   - `/`: Home page
+   - `/tools`: Public tools
+   - `/auth/*`: Authentication pages
+
+2. **Private URLs**
+   - `/dashboard`: User dashboard
+   - `/tools/*`: Tool management
+   - `/clients/*`: Client management
+   - `/pathways/*`: Pathway management
+
+## Best Practices
+
+1. **Route Organization**
+   - Group related routes
+   - Use proper route nesting
+   - Implement proper loading states
+
+2. **Navigation UX**
+   - Show loading indicators
+   - Handle errors gracefully
+   - Maintain navigation state
+
+3. **SEO**
+   - Implement proper metadata
+   - Use semantic URLs
+   - Handle dynamic routes properly
+

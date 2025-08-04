@@ -1,0 +1,317 @@
+# React Dialog Component Standards
+
+This rule defines the conventions and patterns for creating React dialog components in our project, based on the patterns established in [create-user-dialog.tsx](mdc:components/create-user-dialog.tsx).
+
+## Component Structure
+
+### 1. File Organization
+- Place dialog components in the `components/` directory
+- Use kebab-case naming: `create-user-dialog.tsx`
+- Export as named function components
+
+### 2. Client Component Declaration
+```typescript
+"use client"
+```
+Always include this directive at the top of dialog components since they use browser APIs and state.
+
+### 3. Import Structure
+```typescript
+import { useState, useRef } from "react"
+import SimpleReactValidator from 'simple-react-validator'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+```
+
+## Props Interface
+
+### 4. Dialog Props Pattern
+```typescript
+interface CreateUserDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
+```
+
+- Always include `open` and `onOpenChange` props for dialog state management
+- Use descriptive interface names with "Props" suffix
+- Destructure props in function parameters
+
+## State Management
+
+### 5. Form State Pattern
+```typescript
+const [isLoading, setIsLoading] = useState(false)
+const [form, setState] = useState({
+  firstName: "",
+  lastName: "",
+  email: "",
+  role: "User",
+  status: true, // true for active, false for inactive
+});
+```
+
+- Use `isLoading` state for async operations
+- Group form fields in a single state object
+- Provide meaningful default values
+- Add comments for boolean field meanings
+
+### 6. Validator Setup
+```typescript
+const simpleValidator = useRef(new SimpleReactValidator())
+```
+
+- Use `useRef` for validator instances
+- Initialize validator in component scope
+
+## Event Handlers
+
+### 7. Close Handler
+```typescript
+const handleClose = () => {
+  onOpenChange(false);
+}
+```
+
+- Create dedicated close handler
+- Always call `onOpenChange(false)` to properly close dialog
+
+### 8. Form Change Handler
+```typescript
+const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const { name, value, type, checked }:any = e.target;
+  setState(prevState => ({
+    ...prevState,
+    [name]: type === 'checkbox' ? checked : value
+  }));
+}
+```
+
+- Use generic handler for all form inputs
+- Handle both text inputs and checkboxes
+- Use spread operator for immutable state updates
+- Support dynamic field names with bracket notation
+
+### 9. Submit Handler Pattern
+```typescript
+const handleSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+  if (simpleValidator.current.allValid()) {
+    setIsLoading(true)
+    try {
+      // Handle form submission here
+      console.log(form)
+      handleClose()
+    } catch (error) {
+      console.error("Error creating user:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  } else {
+    simpleValidator.current.showMessages();
+  }
+}
+```
+
+- Prevent default form submission
+- Validate before processing
+- Use try-catch-finally for error handling
+- Set loading state during async operations
+- Close dialog on successful submission
+
+## JSX Structure
+
+### 10. Dialog Wrapper
+```typescript
+<Dialog open={open} onOpenChange={handleClose}>
+  <DialogContent className="sm:max-w-[425px]">
+    {/* Dialog content */}
+  </DialogContent>
+</Dialog>
+```
+
+- Use shadcn/ui Dialog components
+- Set responsive max-width with Tailwind classes
+- Pass `open` and `onOpenChange` props
+
+### 11. Dialog Header
+```typescript
+<DialogHeader>
+  <DialogTitle>Create New User</DialogTitle>
+  <DialogDescription>
+    Add a new user to the RelaxFlow platform. Fill in all required fields below.
+  </DialogDescription>
+</DialogHeader>
+```
+
+- Use descriptive titles
+- Provide helpful descriptions
+- Follow shadcn/ui Dialog component structure
+
+### 12. Form Structure
+```typescript
+<form onSubmit={handleSubmit} className="space-y-4">
+  {/* Form fields */}
+</form>
+```
+
+- Use semantic `<form>` element
+- Add `onSubmit` handler
+- Use `space-y-4` for consistent spacing
+
+### 13. Form Field Pattern
+```typescript
+<div className="flex flex-col space-y-2">
+  <label htmlFor="fieldName" className="font-medium">Field Label</label>
+  <input
+    id="fieldName"
+    name="fieldName"
+    type="text"
+    value={form.fieldName}
+    onChange={handleChange}
+    placeholder="Enter field description"
+    className="input p-2 border border-gray-300 rounded"
+  />
+  {simpleValidator.current.message('fieldName', form.fieldName, 'required|validation')}
+</div>
+```
+
+- Wrap each field in a container div
+- Use `flex flex-col space-y-2` for layout
+- Include proper labels with `htmlFor`
+- Match `id` and `name` attributes
+- Use controlled inputs with `value` and `onChange`
+- Add descriptive placeholders
+- Include validation messages below each field
+
+### 14. Select Field Pattern
+```typescript
+<div className="flex flex-col space-y-2">
+  <label htmlFor="role" className="font-medium">Role</label>
+  <select
+    id="role"
+    name="role"
+    value={form.role}
+    onChange={handleChange}
+    className="select p-2 border border-gray-300 rounded"
+  >
+    <option value="User">User</option>
+    <option value="Admin">Admin</option>
+  </select>
+  {simpleValidator.current.message('role', form.role, 'required')}
+</div>
+```
+
+- Use semantic `<select>` element
+- Include meaningful option values
+- Apply consistent styling
+
+### 15. Checkbox Field Pattern
+```typescript
+<div className="flex items-center space-x-2">
+  <label htmlFor="status" className="font-medium">Status</label>
+  <input
+    id="status"
+    name="status"
+    type="checkbox"
+    checked={form.status}
+    onChange={handleChange}
+    className="switch"
+  />
+  <span>{form.status ? "Active" : "Inactive"}</span>
+  {simpleValidator.current.message('status', form.status, 'boolean')}
+</div>
+```
+
+- Use `flex items-center space-x-2` for horizontal layout
+- Display status text based on checkbox value
+- Use conditional rendering for status display
+
+### 16. Dialog Footer
+```typescript
+<DialogFooter>
+  <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
+    Cancel
+  </Button>
+  <Button type="submit" disabled={isLoading}>
+    {isLoading ? "Creating..." : "Create User"}
+  </Button>
+</DialogFooter>
+```
+
+- Use `DialogFooter` component
+- Include Cancel and Submit buttons
+- Disable buttons during loading
+- Show loading text in submit button
+- Use `variant="outline"` for cancel button
+
+## Validation Patterns
+
+### 17. SimpleReactValidator Usage
+```typescript
+{simpleValidator.current.message('fieldName', form.fieldName, 'required|validation')}
+```
+
+- Use consistent validation rules
+- Common rules: `required`, `email`, `alpha`, `boolean`
+- Place validation messages below each field
+
+## Styling Conventions
+
+### 18. CSS Classes
+- Use Tailwind CSS classes
+- Common patterns:
+  - `flex flex-col space-y-2` for field containers
+  - `flex items-center space-x-2` for checkbox layouts
+  - `p-2 border border-gray-300 rounded` for inputs
+  - `font-medium` for labels
+  - `sm:max-w-[425px]` for responsive dialog width
+
+## Error Handling
+
+### 19. Error Handling Pattern
+```typescript
+try {
+  // Handle form submission here
+  console.log(form)
+  handleClose()
+} catch (error) {
+  console.error("Error creating user:", error)
+} finally {
+  setIsLoading(false)
+}
+```
+
+- Use try-catch blocks for async operations
+- Log errors with descriptive messages
+- Always reset loading state in finally block
+
+## Best Practices
+
+### 20. Component Guidelines
+- Keep dialogs focused on single responsibility
+- Use descriptive component and prop names
+- Provide helpful user feedback
+- Handle loading states properly
+- Implement proper form validation
+- Use semantic HTML elements
+- Follow accessibility best practices
+
+### 21. TypeScript Usage
+- Use proper type annotations for event handlers
+- Define interfaces for component props
+- Use type assertions sparingly (e.g., `:any` for event targets)
+- Leverage TypeScript for better developer experience
+
+This rule ensures consistent dialog component patterns across the project, following the established conventions in [create-user-dialog.tsx](mdc:components/create-user-dialog.tsx). 
+description:
+globs:
+alwaysApply: false
+---

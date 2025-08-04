@@ -1,0 +1,73 @@
+# Application Stack and Major Dependencies
+
+This rule documents the main frameworks, libraries, and tools used in the project, along with their versions and best practice notes. Refer to this rule for guidance on the stack and dependency management.
+
+## Core Frameworks
+- **Next.js**: `15.2.4`  
+  - Modern React framework for SSR, SSG, and hybrid apps.
+  - Best Practice: Keep up with minor/patch updates for security and performance. Review [Next.js upgrade guides](https://nextjs.org/docs/upgrading) before major version changes.
+- **React**: `^19`  
+  - Core UI library.
+  - Best Practice: Use function components and hooks. Avoid deprecated lifecycle methods.
+- **React DOM**: `^19`
+
+## Styling & UI
+- **Tailwind CSS**: `^3.4.17`  
+  - Utility-first CSS framework.
+  - Best Practice: Use with PostCSS and keep config files (`tailwind.config.ts`, `postcss.config.mjs`) versioned.
+- **Radix UI**: (multiple `@radix-ui/*` packages, v1.x/2.x)
+  - Accessible, unstyled UI primitives. Used for dialogs, menus, forms, etc.
+  - Best Practice: Use latest minor versions for bug fixes. Compose with Tailwind for custom design.
+- **Lucide React**: `^0.454.0`
+  - Icon library for React.
+- **sonner**: `^1.7.1`
+  - Toast notification system.
+- **tailwindcss-animate**: `^1.0.7`
+  - Animation utilities for Tailwind.
+
+## Forms & Validation
+- **react-hook-form**: `latest`
+  - Form state management.
+- **zod**: `latest`
+  - TypeScript-first schema validation.
+- **@hookform/resolvers**: `latest`
+  - Integrates Zod and other schema validators with react-hook-form.
+
+## Utilities
+- **clsx**: `^2.1.1` / **class-variance-authority**: `^0.7.1`
+  - Conditional className utilities.
+- **date-fns**: `4.1.0`
+  - Date utility library.
+- **cmdk**: `1.0.4`
+  - Command menu component.
+- **input-otp**: `1.4.1`
+  - OTP input component.
+- **recharts**: `latest`
+  - Charting library for React.
+- **embla-carousel-react**: `8.5.1`
+  - Carousel/slider component.
+- **vaul**: `^0.9.6`
+  - Drawer component library.
+- **react-resizable-panels**: `^2.1.7`
+  - Resizable panel layout utility.
+
+## Dev & Build Tools
+- **TypeScript**: `^5`
+  - Static typing for JavaScript.
+- **PostCSS**: `^8.5`
+  - CSS processing tool.
+- **Autoprefixer**: `^10.4.20`
+  - Adds vendor prefixes to CSS.
+
+## Best Practices & Remarks
+- Use `latest` only for libraries where breaking changes are rare or easy to fix (e.g., Zod, react-hook-form). For core dependencies, prefer explicit versioning to avoid unexpected breaking changes.
+- Regularly run `pnpm update` or `npm update` and review changelogs for major dependencies.
+- Keep devDependencies (TypeScript, @types/*, etc.) up to date for best DX and type safety.
+- Use [dependabot](https://docs.github.com/en/code-security/supply-chain-security/keeping-your-dependencies-updated-automatically/about-dependabot) or similar tools to automate dependency updates.
+- Review and test after upgrading any major dependency, especially React, Next.js, and Tailwind CSS.
+
+Refer to this rule when evaluating, upgrading, or adding dependencies to the project.
+description:
+globs:
+alwaysApply: false
+---

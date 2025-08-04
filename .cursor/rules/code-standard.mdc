@@ -1,0 +1,16 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## Coding Standards 
+
+- **TyperScript** use typescript wherever is required. Example when creating varibles, passing parameters, defining funtions etc.
+
+- **Props and State**: Always destructure props and avoid passing unnecessary props to components.
+  - Use default props to avoid undefined values and ensure type safety (TypeScript or PropTypes).
+
+- **Component Modularity**: All components are managed within the `src/components` directory
+  - Components Should be 'Client Component'
+  - Keep components small and reusable.
+  - Each component should have a single responsibility and be easily testable.

@@ -2,10 +2,10 @@
 
 import type React from "react"
 
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
+import { useState, useRef, useEffect } from "react"
+import SimpleReactValidator from "simple-react-validator"
+import PhoneInput from "react-phone-input-2"
+import "react-phone-input-2/lib/style.css"
 import {
   Dialog,
   DialogContent,
@@ -14,11 +14,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Loader2, ArrowLeft, ArrowRight, Plus, X, Search, Check } from "lucide-react"
+import { Loader2, ArrowLeft, ArrowRight, Plus, X, Search, Check, Eye, EyeOff, Phone } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandList } from "@/components/ui/command"
@@ -37,24 +35,23 @@ const availableProducts = [
   { id: "ZEN-001", name: "Zen Meditation Kit" },
 ]
 
-const ownerDetailsSchema = z.object({
-  firstName: z.string().min(2, "First name must be at least 2 characters"),
-  lastName: z.string().min(2, "Last name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  phone: z.string().min(10, "Please enter a valid phone number"),
-})
+interface OwnerDetailsFormData {
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  password?: string
+  confirmPassword?: string
+}
 
-const locationSchema = z.object({
-  name: z.string().min(2, "Location name must be at least 2 characters"),
-  deviceIds: z.array(z.string()).min(1, "At least one device must be selected"),
-})
+interface LocationFormData {
+  name: string
+  deviceIds: string[]
+}
 
-const locationsSchema = z.object({
-  locations: z.array(locationSchema).min(1, "At least one location is required"),
-})
-
-type OwnerDetailsFormValues = z.infer<typeof ownerDetailsSchema>
-type LocationsFormValues = z.infer<typeof locationsSchema>
+interface LocationsFormData {
+  locations: LocationFormData[]
+}
 
 interface CreateOwnerDialogProps {
   open: boolean
@@ -65,6 +62,111 @@ interface MultiSelectDeviceProps {
   selectedDevices: string[]
   onDevicesChange: (devices: string[]) => void
   placeholder?: string
+}
+
+// Reusable Password Input Component
+interface PasswordInputProps {
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+  label?: string
+  showToggle?: boolean
+  className?: string
+  validator: SimpleReactValidator
+  field: string
+  validationRules: string
+}
+
+function PasswordInput({ 
+  value, 
+  onChange, 
+  placeholder = "Enter password", 
+  label = "Password",
+  showToggle = true,
+  className = "",
+  validator,
+  field,
+  validationRules,
+}: PasswordInputProps) {
+  const [showPassword, setShowPassword] = useState(false)
+
+  return (
+    <div className={`space-y-2 ${className}`}>
+      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          type={showPassword ? "text" : "password"}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-10"
+        />
+        {showToggle && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        )}
+      </div>
+      {validator.message(field, value, validationRules) && (
+        <div className="text-sm text-red-600 mt-1">
+          {validator.message(field, value, validationRules)}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Reusable Input Component with Validation
+interface ValidatedInputProps {
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+  label?: string
+  type?: string
+  validator: SimpleReactValidator
+  field: string
+  validationRules: string
+  customErrorMessage?: string
+  className?: string
+}
+
+function ValidatedInput({ 
+  value, 
+  onChange, 
+  placeholder = "", 
+  label = "",
+  type = "text",
+  validator,
+  field,
+  validationRules,
+  customErrorMessage,
+  className = ""
+}: ValidatedInputProps) {
+  return (
+    <div className={`space-y-2 ${className}`}>
+      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+        {label}
+      </label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+      />
+      {validator.message(field, value, validationRules) && (
+        <div className="text-sm text-red-600 mt-1">
+          {customErrorMessage || validator.message(field, value, validationRules)}
+        </div>
+      )}
+    </div>
+  )
 }
 
 function MultiSelectDevice({
@@ -186,86 +288,157 @@ function MultiSelectDevice({
 export function CreateOwnerDialog({ open, onOpenChange }: CreateOwnerDialogProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
-  const [ownerDetails, setOwnerDetails] = useState<OwnerDetailsFormValues | null>(null)
+  const [ownerDetails, setOwnerDetails] = useState<OwnerDetailsFormData | null>(null)
+  const [countryCode, setCountryCode] = useState('us')
+  
+  // Form data state
+  const [ownerFormData, setOwnerFormData] = useState<OwnerDetailsFormData>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+  })
+  
+  const [locationsFormData, setLocationsFormData] = useState<LocationsFormData>({
+    locations: [
+      {
+        name: "",
+        deviceIds: [],
+      },
+    ],
+  })
 
-  const ownerForm = useForm<OwnerDetailsFormValues>({
-    resolver: zodResolver(ownerDetailsSchema),
-    defaultValues: {
+  // Validators
+  const ownerValidator = useRef(new SimpleReactValidator())
+  const locationsValidator = useRef(new SimpleReactValidator())
+
+  useEffect(() => {
+    if (ownerFormData?.phone) {
+      try {
+        const phoneNumber: any = ownerFormData?.phone;
+        if (phoneNumber) {
+          setCountryCode(phoneNumber?.country);
+        }
+      } catch (error) {
+        setCountryCode('us');
+      }
+    }
+  }, [ownerFormData?.phone]);
+
+  const handleOwnerDetailsSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (ownerValidator.current.allValid()) {
+      setOwnerDetails(ownerFormData)
+      setCurrentStep(2)
+    } else {
+      ownerValidator.current.showMessages()
+      // Force re-render
+      setOwnerFormData({ ...ownerFormData })
+    }
+  }
+
+  const handleLocationsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (locationsValidator.current.allValid()) {
+      setIsLoading(true)
+      try {
+        // Simulate API call
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+        console.log("Creating owner:", { ...ownerDetails, ...locationsFormData })
+
+        // Reset forms and close dialog
+        setOwnerFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          phone: "",
+          password: "",
+          confirmPassword: "",
+        })
+        setLocationsFormData({
+          locations: [
+            {
+              name: "",
+              deviceIds: [],
+            },
+          ],
+        })
+        setOwnerDetails(null)
+        setCurrentStep(1)
+        onOpenChange(false)
+      } catch (error) {
+        console.error("Error creating owner:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    } else {
+      locationsValidator.current.showMessages()
+      // Force re-render
+      setLocationsFormData({ ...locationsFormData })
+    }
+  }
+
+  const addLocation = () => {
+    setLocationsFormData({
+      ...locationsFormData,
+      locations: [
+        ...locationsFormData.locations,
+        {
+          name: "",
+          deviceIds: [],
+        },
+      ],
+    })
+  }
+
+  const removeLocation = (index: number) => {
+    if (locationsFormData.locations.length > 1) {
+      setLocationsFormData({
+        ...locationsFormData,
+        locations: locationsFormData.locations.filter((_, i) => i !== index),
+      })
+    }
+  }
+
+  const handleDevicesChange = (locationIndex: number, devices: string[]) => {
+    const updatedLocations = [...locationsFormData.locations]
+    updatedLocations[locationIndex].deviceIds = devices
+    setLocationsFormData({
+      ...locationsFormData,
+      locations: updatedLocations,
+    })
+  }
+
+  const handleLocationNameChange = (locationIndex: number, name: string) => {
+    const updatedLocations = [...locationsFormData.locations]
+    updatedLocations[locationIndex].name = name
+    setLocationsFormData({
+      ...locationsFormData,
+      locations: updatedLocations,
+    })
+  }
+
+  const handleClose = () => {
+    setOwnerFormData({
       firstName: "",
       lastName: "",
       email: "",
       phone: "",
-    },
-  })
-
-  const locationsForm = useForm<LocationsFormValues>({
-    resolver: zodResolver(locationsSchema),
-    defaultValues: {
+      password: "",
+      confirmPassword: "",
+    })
+    setLocationsFormData({
       locations: [
         {
           name: "",
           deviceIds: [],
         },
       ],
-    },
-  })
-
-  const handleOwnerDetailsSubmit = (data: OwnerDetailsFormValues) => {
-    setOwnerDetails(data)
-    setCurrentStep(2)
-  }
-
-  const handleLocationsSubmit = async (data: LocationsFormValues) => {
-    setIsLoading(true)
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-      console.log("Creating owner:", { ...ownerDetails, ...data })
-
-      // Reset forms and close dialog
-      ownerForm.reset()
-      locationsForm.reset()
-      setOwnerDetails(null)
-      setCurrentStep(1)
-      onOpenChange(false)
-    } catch (error) {
-      console.error("Error creating owner:", error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const addLocation = () => {
-    const currentLocations = locationsForm.getValues("locations")
-    locationsForm.setValue("locations", [
-      ...currentLocations,
-      {
-        name: "",
-        deviceIds: [],
-      },
-    ])
-  }
-
-  const removeLocation = (index: number) => {
-    const currentLocations = locationsForm.getValues("locations")
-    if (currentLocations.length > 1) {
-      locationsForm.setValue(
-        "locations",
-        currentLocations.filter((_, i) => i !== index),
-      )
-    }
-  }
-
-  const handleDevicesChange = (locationIndex: number, devices: string[]) => {
-    const currentLocations = locationsForm.getValues("locations")
-    currentLocations[locationIndex].deviceIds = devices
-    locationsForm.setValue("locations", currentLocations)
-    locationsForm.trigger(`locations.${locationIndex}.deviceIds`)
-  }
-
-  const handleClose = () => {
-    ownerForm.reset()
-    locationsForm.reset()
+    })
     setOwnerDetails(null)
     setCurrentStep(1)
     onOpenChange(false)
@@ -295,158 +468,170 @@ export function CreateOwnerDialog({ open, onOpenChange }: CreateOwnerDialogProps
         </DialogHeader>
 
         {currentStep === 1 && (
-          <Form {...ownerForm}>
-            <form onSubmit={ownerForm.handleSubmit(handleOwnerDetailsSubmit)} className="space-y-4">
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Owner Details</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={ownerForm.control}
-                    name="firstName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>First Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter first name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={ownerForm.control}
-                    name="lastName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Last Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter last name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={ownerForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email Address</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="Enter email address" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+          <form onSubmit={handleOwnerDetailsSubmit} className="space-y-4">
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Owner Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ValidatedInput
+                  value={ownerFormData.firstName}
+                  onChange={(value) => setOwnerFormData({ ...ownerFormData, firstName: value })}
+                  placeholder="Enter first name"
+                  label="First Name"
+                  validator={ownerValidator.current}
+                  field="firstName"
+                  validationRules="required|min:2"
                 />
 
-                <FormField
-                  control={ownerForm.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter phone number" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                <ValidatedInput
+                  value={ownerFormData.lastName}
+                  onChange={(value) => setOwnerFormData({ ...ownerFormData, lastName: value })}
+                  placeholder="Enter last name"
+                  label="Last Name"
+                  validator={ownerValidator.current}
+                  field="lastName"
+                  validationRules="required|min:2"
                 />
               </div>
 
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={handleClose}>
-                  Cancel
-                </Button>
-                <Button type="submit" className="gap-2">
-                  Next
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+              <ValidatedInput
+                value={ownerFormData.email}
+                onChange={(value) => setOwnerFormData({ ...ownerFormData, email: value })}
+                placeholder="Enter email address"
+                label="Email Address"
+                type="email"
+                validator={ownerValidator.current}
+                field="email"
+                validationRules="required|email"
+              />
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Phone Number
+                </label>
+                <div>
+                  <PhoneInput
+                    value={ownerFormData.phone}
+                    inputStyle={{paddingLeft: '40px'}}
+                    placeholder="Phone Number"
+                    country={countryCode}
+                    inputProps={{
+                      name: 'phone',
+                      required: true,
+                      autoFocus: false,
+                      className: 'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+                    }}
+                    onChange={(phone) => setOwnerFormData({...ownerFormData, phone})}
+                  />
+                </div>
+                {ownerValidator.current.message('phone', ownerFormData.phone, 'required|phone|min:10') && (
+                  <div className="text-sm text-red-600 mt-1">
+                    {ownerValidator.current.message('phone', ownerFormData.phone, 'required|phone|min:10')}
+                  </div>
+                )}
+              </div>
+
+              <PasswordInput
+                value={ownerFormData.password || ""}
+                onChange={(value) => setOwnerFormData({ ...ownerFormData, password: value })}
+                placeholder="Enter password"
+                label="Password"
+                validator={ownerValidator.current}
+                field="password"
+                validationRules="required|min:8"
+              />
+
+              <PasswordInput
+                value={ownerFormData.confirmPassword || ""}
+                onChange={(value) => setOwnerFormData({ ...ownerFormData, confirmPassword: value })}
+                placeholder="Confirm password"
+                label="Confirm Password"
+                validator={ownerValidator.current}
+                field="confirmPassword"
+                validationRules={`required|in:${ownerFormData.password || ''}`}
+              />
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button type="submit" className="gap-2">
+                Next
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </DialogFooter>
+          </form>
         )}
 
         {currentStep === 2 && (
-          <Form {...locationsForm}>
-            <form onSubmit={locationsForm.handleSubmit(handleLocationsSubmit)} className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium">Location Management</h3>
-                  <Button type="button" variant="outline" size="sm" onClick={addLocation} className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Add Location
-                  </Button>
-                </div>
-
-                {locationsForm.watch("locations").map((location, locationIndex) => (
-                  <div key={locationIndex} className="border rounded-lg p-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">Location {locationIndex + 1}</h4>
-                      {locationsForm.watch("locations").length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeLocation(locationIndex)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-
-                    <FormField
-                      control={locationsForm.control}
-                      name={`locations.${locationIndex}.name`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Location Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter location name" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={locationsForm.control}
-                      name={`locations.${locationIndex}.deviceIds`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Device IDs</FormLabel>
-                          <FormControl>
-                            <MultiSelectDevice
-                              selectedDevices={field.value}
-                              onDevicesChange={(devices) => handleDevicesChange(locationIndex, devices)}
-                              placeholder="Search and select multiple devices..."
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                ))}
+          <form onSubmit={handleLocationsSubmit} className="space-y-4">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium">Location Management</h3>
+                <Button type="button" variant="outline" size="sm" onClick={addLocation} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Location
+                </Button>
               </div>
 
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={handleBack} className="gap-2">
-                  <ArrowLeft className="h-4 w-4" />
-                  Back
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Create Owner
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
+              {locationsFormData.locations.map((location, locationIndex) => (
+                <div key={locationIndex} className="border rounded-lg p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">Location {locationIndex + 1}</h4>
+                    {locationsFormData.locations.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeLocation(locationIndex)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+
+                  <ValidatedInput
+                    value={location.name}
+                    onChange={(value) => handleLocationNameChange(locationIndex, value)}
+                    placeholder="Enter location name"
+                    label="Location Name"
+                    validator={locationsValidator.current}
+                    field={`locations.${locationIndex}.name`}
+                    validationRules="required|min:2"
+                    customErrorMessage="The location name field is required"
+                  />
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      Device IDs
+                    </label>
+                    <MultiSelectDevice
+                      selectedDevices={location.deviceIds}
+                      onDevicesChange={(devices) => handleDevicesChange(locationIndex, devices)}
+                      placeholder="Search and select multiple devices..."
+                    />
+                                         {locationsValidator.current.message(`locations.${locationIndex}.deviceIds`, location.deviceIds, 'required') && (
+                       <div className="text-sm text-red-600 mt-1">
+                         The device ID field is required
+                       </div>
+                     )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleBack} className="gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Create Owner
+              </Button>
+            </DialogFooter>
+          </form>
         )}
       </DialogContent>
     </Dialog>

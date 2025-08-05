@@ -318,7 +318,6 @@ export default function ProfilePage() {
                             inputStyle={{paddingLeft: '40px'}}
                             placeholder='Phone Number'
                             country={countryCode}
-                            onlyCountries={['us', 'in']}
                             inputProps={{
                               name: 'phone',
                               required: true,

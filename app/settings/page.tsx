@@ -1,9 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
+import { useState, useRef } from "react"
+import SimpleReactValidator from 'simple-react-validator'
 import { AppSidebar } from "../../components/app-sidebar"
 import { DashboardHeader } from "../../components/dashboard-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
@@ -11,12 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { showPasswordFn, toggleIconFn } from "@/lib/reusableFn"
 import {
   Settings,
   Globe,
@@ -34,126 +32,132 @@ import {
   AlertTriangle,
 } from "lucide-react"
 
-const generalSettingsSchema = z.object({
-  siteName: z.string().min(2, "Site name must be at least 2 characters"),
-  siteDescription: z.string().max(500, "Description must be less than 500 characters"),
-  adminEmail: z.string().email("Please enter a valid email address"),
-  timezone: z.string(),
-  language: z.string(),
-  maintenanceMode: z.boolean(),
-})
-
-const emailSettingsSchema = z.object({
-  smtpHost: z.string().min(1, "SMTP host is required"),
-  smtpPort: z.string().min(1, "SMTP port is required"),
-  smtpUsername: z.string().min(1, "SMTP username is required"),
-  smtpPassword: z.string().min(1, "SMTP password is required"),
-  fromEmail: z.string().email("Please enter a valid email address"),
-  fromName: z.string().min(1, "From name is required"),
-})
-
-const securitySettingsSchema = z.object({
-  sessionTimeout: z.string(),
-  maxLoginAttempts: z.string(),
-  passwordMinLength: z.string(),
-  requireTwoFactor: z.boolean(),
-  allowRegistration: z.boolean(),
-})
-
-type GeneralSettingsFormValues = z.infer<typeof generalSettingsSchema>
-type EmailSettingsFormValues = z.infer<typeof emailSettingsSchema>
-type SecuritySettingsFormValues = z.infer<typeof securitySettingsSchema>
-
 export default function SettingsPage() {
+  // Initialize simple-react-validator with custom styling
+  const validator = useRef(new SimpleReactValidator({
+    className: 'text-red-500 text-sm mt-1'
+  }))
+  
+  // Loading states
   const [isGeneralLoading, setIsGeneralLoading] = useState(false)
   const [isEmailLoading, setIsEmailLoading] = useState(false)
   const [isSecurityLoading, setIsSecurityLoading] = useState(false)
+  
+  // UI states
   const [darkMode, setDarkMode] = useState(false)
   const [emailNotifications, setEmailNotifications] = useState(true)
   const [pushNotifications, setPushNotifications] = useState(false)
   const [systemNotifications, setSystemNotifications] = useState(true)
-
-  const generalForm = useForm<GeneralSettingsFormValues>({
-    resolver: zodResolver(generalSettingsSchema),
-    defaultValues: {
-      siteName: "RelaxFlow Admin",
-      siteDescription: "Sound therapy and meditation platform administration",
-      adminEmail: "admin@relaxflow.com",
-      timezone: "America/Los_Angeles",
-      language: "en",
-      maintenanceMode: false,
-    },
+  
+  // Password visibility states
+  const [showSmtpPassword, setShowSmtpPassword] = useState(false)
+  
+  // rerender states
+  const [forceUpdate, setForceUpdate] = useState(0)
+  
+  // Form states
+  const [generalForm, setGeneralForm] = useState({
+    siteName: "RelaxFlow Admin",
+    siteDescription: "Sound therapy and meditation platform administration",
+    adminEmail: "admin@relaxflow.com",
+    timezone: "America/Los_Angeles",
+    language: "en",
+    maintenanceMode: false,
   })
-
-  const emailForm = useForm<EmailSettingsFormValues>({
-    resolver: zodResolver(emailSettingsSchema),
-    defaultValues: {
-      smtpHost: "smtp.gmail.com",
-      smtpPort: "587",
-      smtpUsername: "noreply@relaxflow.com",
-      smtpPassword: "",
-      fromEmail: "noreply@relaxflow.com",
-      fromName: "RelaxFlow",
-    },
+  
+  const [emailForm, setEmailForm] = useState({
+    smtpHost: "smtp.gmail.com",
+    smtpPort: "587",
+    smtpUsername: "noreply@relaxflow.com",
+    smtpPassword: "",
+    fromEmail: "noreply@relaxflow.com",
+    fromName: "RelaxFlow",
   })
-
-  const securityForm = useForm<SecuritySettingsFormValues>({
-    resolver: zodResolver(securitySettingsSchema),
-    defaultValues: {
-      sessionTimeout: "30",
-      maxLoginAttempts: "5",
-      passwordMinLength: "8",
-      requireTwoFactor: false,
-      allowRegistration: false,
-    },
+  
+  const [securityForm, setSecurityForm] = useState({
+    sessionTimeout: "30",
+    maxLoginAttempts: "5",
+    passwordMinLength: "8",
+    requireTwoFactor: false,
+    allowRegistration: false,
   })
-
-  const onGeneralSubmit = async (data: GeneralSettingsFormValues) => {
-    setIsGeneralLoading(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-      console.log("General settings updated:", data)
-    } catch (error) {
-      console.error("General settings update error:", error)
-    } finally {
-      setIsGeneralLoading(false)
+  
+  // Form handlers
+  const handleGeneralChange = (field: string, value: string | boolean) => {
+    setGeneralForm(prev => ({ ...prev, [field]: value }))
+  }
+  
+  const handleEmailChange = (field: string, value: string) => {
+    setEmailForm(prev => ({ ...prev, [field]: value }))
+  }
+  
+  const handleSecurityChange = (field: string, value: string | boolean) => {
+    setSecurityForm(prev => ({ ...prev, [field]: value }))
+  }
+  
+  // Submit handlers
+  const onGeneralSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (validator.current.allValid()) {
+      setIsGeneralLoading(true)
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 1500))
+        console.log("General settings updated:", generalForm)
+      } catch (error) {
+        console.error("General settings update error:", error)
+      } finally {
+        setIsGeneralLoading(false)
+      }
+    } else {
+      validator.current.showMessages()
+      setForceUpdate(prev => prev + 1)
     }
   }
-
-  const onEmailSubmit = async (data: EmailSettingsFormValues) => {
-    setIsEmailLoading(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-      console.log("Email settings updated:", data)
-    } catch (error) {
-      console.error("Email settings update error:", error)
-    } finally {
-      setIsEmailLoading(false)
+  
+  const onEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (validator.current.allValid()) {
+      setIsEmailLoading(true)
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 1500))
+        console.log("Email settings updated:", emailForm)
+      } catch (error) {
+        console.error("Email settings update error:", error)
+      } finally {
+        setIsEmailLoading(false)
+      }
+    } else {
+      validator.current.showMessages()
+      setForceUpdate(prev => prev + 1)
     }
   }
-
-  const onSecuritySubmit = async (data: SecuritySettingsFormValues) => {
-    setIsSecurityLoading(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-      console.log("Security settings updated:", data)
-    } catch (error) {
-      console.error("Security settings update error:", error)
-    } finally {
-      setIsSecurityLoading(false)
+  
+  const onSecuritySubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (validator.current.allValid()) {
+      setIsSecurityLoading(true)
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 1500))
+        console.log("Security settings updated:", securityForm)
+      } catch (error) {
+        console.error("Security settings update error:", error)
+      } finally {
+        setIsSecurityLoading(false)
+      }
+    } else {
+      validator.current.showMessages()
+      setForceUpdate(prev => prev + 1)
     }
   }
 
   const handleBackupDatabase = () => {
     console.log("Starting database backup...")
-    // Implement backup logic
   }
-
+  
   const handleClearCache = () => {
     console.log("Clearing system cache...")
-    // Implement cache clearing logic
   }
-
+  
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -205,136 +209,101 @@ export default function SettingsPage() {
                   <CardDescription>Configure basic platform settings and information</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Form {...generalForm}>
-                    <form onSubmit={generalForm.handleSubmit(onGeneralSubmit)} className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={generalForm.control}
-                          name="siteName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Site Name</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Enter site name" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
+                  <form onSubmit={onGeneralSubmit} className="space-y-4" data-np-autofill-form-type="identity" data-np-checked="1" data-np-watching="1">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Site Name</label>
+                        <Input
+                          placeholder="Enter site name"
+                          value={generalForm.siteName}
+                          onChange={(e) => handleGeneralChange('siteName', e.target.value)}
+                          data-np-intersection-state="visible"
                         />
-
-                        <FormField
-                          control={generalForm.control}
-                          name="adminEmail"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Admin Email</FormLabel>
-                              <FormControl>
-                                <Input type="email" placeholder="Enter admin email" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        {validator.current.message('site_name', generalForm.siteName, 'required|min:2')}
                       </div>
 
-                      <FormField
-                        control={generalForm.control}
-                        name="siteDescription"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Site Description</FormLabel>
-                            <FormControl>
-                              <Textarea placeholder="Enter site description" className="min-h-[100px]" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Admin Email</label>
+                        <Input
+                          type="email"
+                          placeholder="Enter admin email"
+                          value={generalForm.adminEmail}
+                          onChange={(e) => handleGeneralChange('adminEmail', e.target.value)}
+                          data-np-intersection-state="visible"
+                        />
+                        {validator.current.message('admin_email', generalForm.adminEmail, 'required|email')}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Site Description</label>
+                      <Textarea
+                        placeholder="Enter site description"
+                        className="min-h-[100px]"
+                        value={generalForm.siteDescription}
+                        onChange={(e) => handleGeneralChange('siteDescription', e.target.value)}
                       />
+                      {validator.current.message('site_description', generalForm.siteDescription, 'required|max:500')}
+                    </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={generalForm.control}
-                          name="timezone"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Timezone</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select timezone" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
-                                  <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
-                                  <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
-                                  <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
-                                  <SelectItem value="UTC">UTC</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={generalForm.control}
-                          name="language"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Default Language</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select language" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="en">English</SelectItem>
-                                  <SelectItem value="es">Spanish</SelectItem>
-                                  <SelectItem value="fr">French</SelectItem>
-                                  <SelectItem value="de">German</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Timezone</label>
+                        <Select value={generalForm.timezone} onValueChange={(value) => handleGeneralChange('timezone', value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select timezone" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="America/Los_Angeles">Pacific Time (PT)</SelectItem>
+                            <SelectItem value="America/Denver">Mountain Time (MT)</SelectItem>
+                            <SelectItem value="America/Chicago">Central Time (CT)</SelectItem>
+                            <SelectItem value="America/New_York">Eastern Time (ET)</SelectItem>
+                            <SelectItem value="UTC">UTC</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
 
-                      <div className="flex items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <div className="text-sm font-medium">Maintenance Mode</div>
-                          <div className="text-xs text-muted-foreground">
-                            Enable to temporarily disable public access
-                          </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Default Language</label>
+                        <Select value={generalForm.language} onValueChange={(value) => handleGeneralChange('language', value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select language" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="en">English</SelectItem>
+                            <SelectItem value="es">Spanish</SelectItem>
+                            <SelectItem value="fr">French</SelectItem>
+                            <SelectItem value="de">German</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <div className="text-sm font-medium">Maintenance Mode</div>
+                        <div className="text-xs text-muted-foreground">
+                          Enable to temporarily disable public access
                         </div>
-                        <FormField
-                          control={generalForm.control}
-                          name="maintenanceMode"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormControl>
-                                <Switch checked={field.value} onCheckedChange={field.onChange} />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
                       </div>
+                      <Switch
+                        checked={generalForm.maintenanceMode}
+                        onCheckedChange={(checked) => handleGeneralChange('maintenanceMode', checked)}
+                      />
+                    </div>
 
-                      <div className="flex justify-end">
-                        <Button
-                          type="submit"
-                          disabled={isGeneralLoading}
-                          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                        >
-                          {isGeneralLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          <Save className="mr-2 h-4 w-4" />
-                          Save Changes
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
+                    <div className="flex justify-end">
+                      <Button
+                        type="submit"
+                        disabled={isGeneralLoading}
+                        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                      >
+                        {isGeneralLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Changes
+                      </Button>
+                    </div>
+                  </form>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -347,114 +316,99 @@ export default function SettingsPage() {
                   <CardDescription>Configure SMTP settings for sending emails</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Form {...emailForm}>
-                    <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={emailForm.control}
-                          name="smtpHost"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>SMTP Host</FormLabel>
-                              <FormControl>
-                                <Input placeholder="smtp.gmail.com" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
+                  <form onSubmit={onEmailSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">SMTP Host</label>
+                        <Input
+                          placeholder="smtp.gmail.com"
+                          value={emailForm.smtpHost}
+                          onChange={(e) => handleEmailChange('smtpHost', e.target.value)}
                         />
-
-                        <FormField
-                          control={emailForm.control}
-                          name="smtpPort"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>SMTP Port</FormLabel>
-                              <FormControl>
-                                <Input placeholder="587" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        {validator.current.message('smtp_host', emailForm.smtpHost, 'required')}
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={emailForm.control}
-                          name="smtpUsername"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>SMTP Username</FormLabel>
-                              <FormControl>
-                                <Input placeholder="username@domain.com" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">SMTP Port</label>
+                        <Input
+                          placeholder="587"
+                          value={emailForm.smtpPort}
+                          onChange={(e) => handleEmailChange('smtpPort', e.target.value)}
                         />
+                        {validator.current.message('smtp_port', emailForm.smtpPort, 'required|numeric')}
+                      </div>
+                    </div>
 
-                        <FormField
-                          control={emailForm.control}
-                          name="smtpPassword"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>SMTP Password</FormLabel>
-                              <FormControl>
-                                <Input type="password" placeholder="••••••••" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">SMTP Username</label>
+                        <Input
+                          placeholder="username@domain.com"
+                          value={emailForm.smtpUsername}
+                          onChange={(e) => handleEmailChange('smtpUsername', e.target.value)}
                         />
+                        {validator.current.message('smtp_username', emailForm.smtpUsername, 'required')}
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={emailForm.control}
-                          name="fromEmail"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>From Email</FormLabel>
-                              <FormControl>
-                                <Input type="email" placeholder="noreply@relaxflow.com" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">SMTP Password</label>
+                        <div className="relative">
+                          <Input
+                            type={showPasswordFn(showSmtpPassword)}
+                            placeholder="••••••••"
+                            value={emailForm.smtpPassword}
+                            onChange={(e) => handleEmailChange('smtpPassword', e.target.value)}
+                          />
+                          <button
+                            type="button"
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                            onClick={() => setShowSmtpPassword(!showSmtpPassword)}
+                          >
+                            {toggleIconFn(showSmtpPassword)}
+                          </button>
+                        </div>
+                        {validator.current.message('smtp_password', emailForm.smtpPassword, 'required')}
+                      </div>
+                    </div>
 
-                        <FormField
-                          control={emailForm.control}
-                          name="fromName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>From Name</FormLabel>
-                              <FormControl>
-                                <Input placeholder="RelaxFlow" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">From Email</label>
+                        <Input
+                          type="email"
+                          placeholder="noreply@relaxflow.com"
+                          value={emailForm.fromEmail}
+                          onChange={(e) => handleEmailChange('fromEmail', e.target.value)}
                         />
+                        {validator.current.message('from_email', emailForm.fromEmail, 'required|email')}
                       </div>
 
-                      <div className="flex justify-end space-x-2">
-                        <Button type="button" variant="outline">
-                          Test Connection
-                        </Button>
-                        <Button
-                          type="submit"
-                          disabled={isEmailLoading}
-                          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                        >
-                          {isEmailLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          <Save className="mr-2 h-4 w-4" />
-                          Save Settings
-                        </Button>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">From Name</label>
+                        <Input
+                          placeholder="RelaxFlow"
+                          value={emailForm.fromName}
+                          onChange={(e) => handleEmailChange('fromName', e.target.value)}
+                        />
+                        {validator.current.message('from_name', emailForm.fromName, 'required')}
                       </div>
-                    </form>
-                  </Form>
+                    </div>
+
+                    <div className="flex justify-end space-x-2">
+                      <Button type="button" variant="outline">
+                        Test Connection
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={isEmailLoading}
+                        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                      >
+                        {isEmailLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Settings
+                      </Button>
+                    </div>
+                  </form>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -467,105 +421,77 @@ export default function SettingsPage() {
                   <CardDescription>Manage security policies and authentication settings</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Form {...securityForm}>
-                    <form onSubmit={securityForm.handleSubmit(onSecuritySubmit)} className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <FormField
-                          control={securityForm.control}
-                          name="sessionTimeout"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Session Timeout (minutes)</FormLabel>
-                              <FormControl>
-                                <Input placeholder="30" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
+                  <form onSubmit={onSecuritySubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Session Timeout (minutes)</label>
+                        <Input
+                          placeholder="30"
+                          value={securityForm.sessionTimeout}
+                          onChange={(e) => handleSecurityChange('sessionTimeout', e.target.value)}
                         />
-
-                        <FormField
-                          control={securityForm.control}
-                          name="maxLoginAttempts"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Max Login Attempts</FormLabel>
-                              <FormControl>
-                                <Input placeholder="5" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={securityForm.control}
-                          name="passwordMinLength"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Min Password Length</FormLabel>
-                              <FormControl>
-                                <Input placeholder="8" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        {validator.current.message('session_timeout', securityForm.sessionTimeout, 'required|numeric')}
                       </div>
 
-                      <Separator />
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Max Login Attempts</label>
+                        <Input
+                          placeholder="5"
+                          value={securityForm.maxLoginAttempts}
+                          onChange={(e) => handleSecurityChange('maxLoginAttempts', e.target.value)}
+                        />
+                        {validator.current.message('max_login_attempts', securityForm.maxLoginAttempts, 'required|numeric')}
+                      </div>
 
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <div className="text-sm font-medium">Require Two-Factor Authentication</div>
-                            <div className="text-xs text-muted-foreground">Force all users to enable 2FA</div>
-                          </div>
-                          <FormField
-                            control={securityForm.control}
-                            name="requireTwoFactor"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Min Password Length</label>
+                        <Input
+                          placeholder="8"
+                          value={securityForm.passwordMinLength}
+                          onChange={(e) => handleSecurityChange('passwordMinLength', e.target.value)}
+                        />
+                        {validator.current.message('password_min_length', securityForm.passwordMinLength, 'required|numeric')}
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <div className="text-sm font-medium">Require Two-Factor Authentication</div>
+                          <div className="text-xs text-muted-foreground">Force all users to enable 2FA</div>
                         </div>
+                        <Switch
+                          checked={securityForm.requireTwoFactor}
+                          onCheckedChange={(checked) => handleSecurityChange('requireTwoFactor', checked)}
+                        />
+                      </div>
 
-                        <div className="flex items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <div className="text-sm font-medium">Allow User Registration</div>
-                            <div className="text-xs text-muted-foreground">Allow new users to register accounts</div>
-                          </div>
-                          <FormField
-                            control={securityForm.control}
-                            name="allowRegistration"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
+                      <div className="flex items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <div className="text-sm font-medium">Allow User Registration</div>
+                          <div className="text-xs text-muted-foreground">Allow new users to register accounts</div>
                         </div>
+                        <Switch
+                          checked={securityForm.allowRegistration}
+                          onCheckedChange={(checked) => handleSecurityChange('allowRegistration', checked)}
+                        />
                       </div>
+                    </div>
 
-                      <div className="flex justify-end">
-                        <Button
-                          type="submit"
-                          disabled={isSecurityLoading}
-                          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                        >
-                          {isSecurityLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          <Save className="mr-2 h-4 w-4" />
-                          Save Security Settings
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
+                    <div className="flex justify-end">
+                      <Button
+                        type="submit"
+                        disabled={isSecurityLoading}
+                        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                      >
+                        {isSecurityLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Security Settings
+                      </Button>
+                    </div>
+                  </form>
                 </CardContent>
               </Card>
             </TabsContent>

@@ -1,0 +1,1 @@
+Rewrite the form validation logic for the following page with simple react validator and basic jsx structures replacing the react hook form and zod along with components under 'ui' directory and make sure  implementing the styling for validation messages and the reusable password functions based on the cursor rule added on the context 
